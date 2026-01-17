@@ -9,7 +9,25 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+// CORS configuration
+const allowedOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',') 
+  : ['http://localhost:3000'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowed => origin.startsWith(allowed.trim()) || allowed.trim() === '*')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // In-memory cache with TTL
 const cache = new Map();
@@ -126,6 +144,64 @@ async function checkURLhaus(url) {
   }
 }
 
+async function checkOTX(domain) {
+  if (!process.env.OTX_API_KEY) return null;
+  try {
+    const response = await axios.get(
+      `https://otx.alienvault.com/api/v1/indicators/domain/${domain}/general`,
+      {
+        headers: { 'X-OTX-API-KEY': process.env.OTX_API_KEY },
+        timeout: 5000
+      }
+    );
+    const pulseCount = response.data.pulse_info?.count || 0;
+    const malwareFamilies = response.data.malware_families?.length || 0;
+    
+    if (pulseCount > 5 || malwareFamilies > 0) {
+      return {
+        flagged: true,
+        pulseCount,
+        malwareFamilies,
+        reputation: response.data.reputation || 0
+      };
+    }
+    return { flagged: false };
+  } catch (err) {
+    console.warn('[OTX] Error:', err.message);
+    return null;
+  }
+}
+
+async function checkVirusTotal(domain) {
+  if (!process.env.VIRUSTOTAL_API_KEY) return null;
+  try {
+    const domainId = Buffer.from(domain).toString('base64').replace(/=/g, '');
+    const response = await axios.get(
+      `https://www.virustotal.com/api/v3/domains/${domain}`,
+      {
+        headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY },
+        timeout: 5000
+      }
+    );
+    
+    const malicious = response.data.data?.attributes?.last_analysis_stats?.malicious || 0;
+    const suspicious = response.data.data?.attributes?.last_analysis_stats?.suspicious || 0;
+    
+    if (malicious > 2 || suspicious > 5) {
+      return {
+        flagged: true,
+        malicious,
+        suspicious,
+        reputation: response.data.data?.attributes?.reputation || 0
+      };
+    }
+    return { flagged: false };
+  } catch (err) {
+    console.warn('[VirusTotal] Error:', err.message);
+    return null;
+  }
+}
+
 async function analyzeThreat(url, pageTitle, snippet) {
   const domain = extractDomain(url);
   if (!domain) return { verdict: 'SAFE', score: 0, reasons: [], tags: [], actions: [], meta: {} };
@@ -155,7 +231,25 @@ async function analyzeThreat(url, pageTitle, snippet) {
     return { verdict: 'DANGEROUS', score, reasons, tags, actions, meta: { domain } };
   }
 
-  // 3. Lookalike detection
+  // 3. OTX (AlienVault) check
+  console.log(`[Analyze] Checking OTX for ${domain}`);
+  const otxResult = await checkOTX(domain);
+  if (otxResult?.flagged) {
+    score += 30;
+    reasons.push(`Flagged by AlienVault OTX (${otxResult.pulseCount} threat pulses${otxResult.malwareFamilies > 0 ? ', ' + otxResult.malwareFamilies + ' malware families' : ''})`);
+    tags.push('OTX_THREAT_INTEL');
+  }
+
+  // 4. VirusTotal check
+  console.log(`[Analyze] Checking VirusTotal for ${domain}`);
+  const vtResult = await checkVirusTotal(domain);
+  if (vtResult?.flagged) {
+    score += 35;
+    reasons.push(`Flagged by ${vtResult.malicious} VirusTotal engines as malicious, ${vtResult.suspicious} as suspicious`);
+    tags.push('VIRUSTOTAL_FLAGGED');
+  }
+
+  // 5. Lookalike detection
   const lookalike = findLookalikeMatch(domain);
   if (lookalike) {
     score += 35;
@@ -163,7 +257,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     tags.push('LOOKALIKE_DOMAIN');
   }
 
-  // 4. Interac scam heuristics
+  // 6. Interac scam heuristics
   if (checkKeywords(snippet, INTERAC_KEYWORDS)) {
     if (checkKeywords(snippet, ['escrow', 'processing fee', 'deposit pending', 'unlock'])) {
       score = 88;
@@ -175,7 +269,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     }
   }
 
-  // 5. CRA refund scam heuristics
+  // 7. CRA refund scam heuristics
   if (checkKeywords(snippet, CRA_KEYWORDS)) {
     const urgencyCount = countMatches(snippet, URGENCY_KEYWORDS);
     const craCount = countMatches(snippet, CRA_KEYWORDS);
@@ -189,7 +283,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     }
   }
 
-  // 6. Generic phishing patterns
+  // 8. Generic phishing patterns
   const phishingCount = countMatches(snippet, PHISHING_KEYWORDS);
   if (phishingCount >= 2) {
     score += 20;

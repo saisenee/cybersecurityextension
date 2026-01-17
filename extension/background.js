@@ -1,6 +1,7 @@
 // NeuroSafe Copilot - Background Service Worker
 
-const BACKEND_URL = 'http://localhost:3000';
+// Use production URL or fallback to localhost for development
+const BACKEND_URL = 'http://localhost:3000'; // Development backend URL
 const FOCUS_MODE_THRESHOLD = 2; // risky events in 60s
 const FOCUS_MODE_WINDOW = 60000; // ms
 

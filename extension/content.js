@@ -22,6 +22,12 @@
 
   // Inject widget
   async function injectWidget() {
+    // Wait for document.body to be available
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', injectWidget);
+      return;
+    }
+
     await loadSettings();
     if (!settings.widgetEnabled) return;
 
