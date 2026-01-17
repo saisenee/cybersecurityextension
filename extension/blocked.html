@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Blocked - NeuroSafe Copilot</title>
+  <link rel="stylesheet" href="blocked.css">
+</head>
+<body>
+  <div class="blocked-container">
+    <div class="warning-icon">⛔</div>
+    <h1 class="title">This site has been blocked for your safety</h1>
+    <div class="verdict-badge" id="verdict-badge">DANGEROUS</div>
+    <p class="explanation">This website was identified as potentially harmful.</p>
+
+    <div class="reasons-section">
+      <h3>Why was this blocked?</h3>
+      <ul class="reasons-list" id="reasons-list">
+        <li>Analyzing...</li>
+      </ul>
+    </div>
+
+    <div class="score-info" id="score-info">Safety Score: 0/100</div>
+
+    <div class="actions">
+      <button id="go-back-btn" class="btn btn-primary">
+        🔙 Go Back (Recommended)
+      </button>
+      
+      <button id="proceed-btn" class="btn btn-danger">
+        ⚠️ Proceed Anyway
+      </button>
+      <p class="warning-text">⚠️ Only continue if you fully trust this site.</p>
+    </div>
+
+    <div class="url-display">
+      <strong>Blocked URL:</strong><br>
+      <span id="blocked-url">Loading...</span>
+    </div>
+  </div>
+
+  <script src="blocked.js"></script>
+</body>
+</html>

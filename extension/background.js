@@ -12,12 +12,13 @@ const settings = {};
 
 // Initialize default settings
 async function initSettings() {
-  const stored = await chrome.storage.local.get(['widgetEnabled', 'focusModeEnabled', 'reducedMotion', 'readingLevel', 'backendBaseUrl']);
+  const stored = await chrome.storage.local.get(['widgetEnabled', 'focusModeEnabled', 'reducedMotion', 'readingLevel', 'backendBaseUrl', 'autoBlockEnabled']);
   settings.widgetEnabled = stored.widgetEnabled !== false;
   settings.focusModeEnabled = stored.focusModeEnabled !== false;
   settings.reducedMotion = stored.reducedMotion === true;
   settings.readingLevel = stored.readingLevel || 'standard';
   settings.backendBaseUrl = stored.backendBaseUrl || BACKEND_URL;
+  settings.autoBlockEnabled = stored.autoBlockEnabled !== false; // Default: enabled
 }
 
 // Analyze URL
@@ -93,6 +94,65 @@ async function deepCheck(url) {
   }
 }
 
+// Check if URL is temporarily allowed for a specific tab
+async function isTemporarilyAllowed(url, tabId) {
+  try {
+    const stored = await chrome.storage.local.get([`allow_${tabId}`]);
+    const allowRule = stored[`allow_${tabId}`];
+    
+    if (!allowRule) return false;
+    
+    // Check if expired
+    if (Date.now() > allowRule.expires) {
+      // Clean up expired rule
+      await chrome.storage.local.remove([`allow_${tabId}`]);
+      return false;
+    }
+    
+    // Check if URL matches
+    if (allowRule.url === url) {
+      console.log(`[BG] URL temporarily allowed for tab ${tabId}`);
+      return true;
+    }
+    
+    return false;
+  } catch (err) {
+    console.error('[BG] Error checking allow rule:', err);
+    return false;
+  }
+}
+
+// Block a dangerous URL
+async function blockUrl(tabId, url, analysisResult) {
+  try {
+    console.log(`[BG] Blocking dangerous URL in tab ${tabId}: ${url}`);
+    
+    // Store block data for blocked page to display
+    await chrome.storage.local.set({
+      currentBlockData: {
+        url,
+        verdict: analysisResult.verdict,
+        score: analysisResult.score,
+        reasons: analysisResult.reasons,
+        tags: analysisResult.tags,
+        timestamp: Date.now()
+      }
+    });
+    
+    // Redirect to blocked page
+    const blockedPageUrl = chrome.runtime.getURL(
+      `blocked.html?url=${encodeURIComponent(url)}&verdict=${analysisResult.verdict}&score=${analysisResult.score}`
+    );
+    
+    await chrome.tabs.update(tabId, { url: blockedPageUrl });
+    
+    return true;
+  } catch (err) {
+    console.error('[BG] Error blocking URL:', err);
+    return false;
+  }
+}
+
 // Message handling
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
@@ -138,6 +198,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       recordRiskEvent(tabId);
       sendResponse({ ok: true });
     }
+    
+    if (msg.type === 'ALLOW_ONCE') {
+      // Tab wants to proceed to dangerous site
+      console.log(`[BG] Allowing once: ${msg.url} for tab ${msg.tabId}`);
+      sendResponse({ ok: true });
+    }
   })();
   
   return true;
@@ -170,6 +236,65 @@ function recordRiskEvent(tabId) {
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabCache.delete(tabId);
   riskEvents.delete(tabId);
+  // Clean up temporary allow rules
+  chrome.storage.local.remove([`allow_${tabId}`]).catch(() => {});
+});
+
+// Tab navigation listener - check and block dangerous sites
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only check when navigation is committed (URL actually changed)
+  if (changeInfo.status !== 'loading' || !tab.url) return;
+  
+  const url = tab.url;
+  
+  // Skip internal pages
+  if (url.startsWith('chrome://') || 
+      url.startsWith('chrome-extension://') || 
+      url.startsWith('about:') ||
+      url.startsWith('edge://')) {
+    return;
+  }
+  
+  // Check if auto-blocking is enabled
+  if (!settings.autoBlockEnabled) {
+    console.log('[BG] Auto-blocking disabled, skipping check');
+    return;
+  }
+  
+  // Wrap async logic in an IIFE
+  (async () => {
+    try {
+      // Check if URL is temporarily allowed
+      const allowed = await isTemporarilyAllowed(url, tabId);
+      if (allowed) {
+        console.log(`[BG] URL allowed for tab ${tabId}, skipping block`);
+        return;
+      }
+      
+      // Check cache first
+      let analysis = tabCache.get(tabId);
+      
+      // If not cached or URL changed, analyze
+      if (!analysis || analysis.url !== url) {
+        console.log(`[BG] Checking URL for blocking: ${url}`);
+        
+        // Quick analysis (we'll do full analysis when content script loads)
+        analysis = await analyzeUrl(url, tab.title || '', '');
+        
+        if (analysis) {
+          tabCache.set(tabId, { ...analysis, url });
+        }
+      }
+      
+      // Block if dangerous
+      if (analysis && analysis.verdict === 'DANGEROUS') {
+        console.log(`[BG] DANGEROUS site detected, blocking: ${url}`);
+        await blockUrl(tabId, url, analysis);
+      }
+    } catch (err) {
+      console.error('[BG] Error in tab update handler:', err);
+    }
+  })();
 });
 
 // Open side panel when extension icon is clicked

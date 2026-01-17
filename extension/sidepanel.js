@@ -247,10 +247,23 @@ document.getElementById('deepcheck-btn').addEventListener('click', async () => {
 // Settings
 document.getElementById('save-settings').addEventListener('click', async () => {
   const widgetEnabled = document.getElementById('widget-toggle').checked;
+  const autoBlockEnabled = document.getElementById('autoblock-toggle').checked;
   const focusModeEnabled = document.getElementById('focus-toggle').checked;
   const reducedMotion = document.getElementById('motion-toggle').checked;
   const readingLevel = document.getElementById('reading-level').value;
   const backendBaseUrl = document.getElementById('backend-url').value;
+
+  await chrome.storage.local.set({
+    widgetEnabled,
+    autoBlockEnabled,
+    focusModeEnabled,
+    reducedMotion,
+    readingLevel,
+    backendBaseUrl
+  });
+
+  alert('✅ Settings saved!');
+});
 
   await chrome.storage.local.set({
     widgetEnabled,
@@ -265,8 +278,17 @@ document.getElementById('save-settings').addEventListener('click', async () => {
 
 // Load settings on init
 async function loadSettings() {
-  const stored = await chrome.storage.local.get(['widgetEnabled', 'focusModeEnabled', 'reducedMotion', 'readingLevel', 'backendBaseUrl']);
+  const stored = await chrome.storage.local.get([
+    'widgetEnabled', 
+    'autoBlockEnabled',
+    'focusModeEnabled', 
+    'reducedMotion', 
+    'readingLevel', 
+    'backendBaseUrl'
+  ]);
+  
   document.getElementById('widget-toggle').checked = stored.widgetEnabled !== false;
+  document.getElementById('autoblock-toggle').checked = stored.autoBlockEnabled !== false;
   document.getElementById('focus-toggle').checked = stored.focusModeEnabled !== false;
   document.getElementById('motion-toggle').checked = stored.reducedMotion === true;
   document.getElementById('reading-level').value = stored.readingLevel || 'standard';

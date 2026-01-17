@@ -30,6 +30,12 @@
       "run_at": "document_start"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html", "blocked.js", "blocked.css"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
