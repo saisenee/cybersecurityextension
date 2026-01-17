@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroSafe Copilot</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div id="sidepanel-root" class="sidepanel">
+    <div class="sidepanel-header">
+      <h1>🛡️ NeuroSafe</h1>
+      <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+    </div>
+
+    <div class="sidepanel-tabs">
+      <button class="tab-btn active" data-tab="status">Status</button>
+      <button class="tab-btn" data-tab="learn">Learn</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Status Tab -->
+    <div id="status-tab" class="tab-content active">
+      <div id="status-loading" class="status-card">
+        <p>Analyzing current page...</p>
+      </div>
+      <div id="status-content" style="display: none;">
+        <div id="verdict-card" class="verdict-card">
+          <div class="verdict-icon" id="verdict-icon">🛡️</div>
+          <div id="verdict-text" class="verdict-text"></div>
+          <div id="verdict-score" class="verdict-score"></div>
+        </div>
+
+        <div id="reasons-section" class="section">
+          <h3>Why?</h3>
+          <ul id="reasons-list" class="reason-list"></ul>
+        </div>
+
+        <div id="actions-section" class="section" style="display: none;">
+          <h3>What to do:</h3>
+          <div id="actions-list" class="action-list"></div>
+        </div>
+
+        <div class="section">
+          <button id="explain-btn" class="primary-btn">📖 Explain This</button>
+          <button id="deepcheck-btn" class="secondary-btn">🔍 Deep Check</button>
+        </div>
+
+        <div id="explanation-section" class="section" style="display: none;">
+          <h4>Explanation</h4>
+          <p id="explanation-text"></p>
+          <ul id="explanation-bullets"></ul>
+          <div id="explanation-next"></div>
+        </div>
+
+        <div id="deepcheck-section" class="section" style="display: none;">
+          <h4>Threat Intelligence</h4>
+          <div id="deepcheck-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learn Tab -->
+    <div id="learn-tab" class="tab-content">
+      <div id="cards-loading" style="text-align: center; padding: 20px;">
+        <p>Loading learning cards...</p>
+      </div>
+      <div id="cards-content" style="display: none;" class="cards-list"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings-tab" class="tab-content">
+      <div class="settings-group">
+        <label class="setting-item">
+          <input type="checkbox" id="widget-toggle" checked>
+          <span>Show floating widget</span>
+        </label>
+        <label class="setting-item">
+          <input type="checkbox" id="focus-toggle" checked>
+          <span>Enable Focus Mode (pause on multiple risky sites)</span>
+        </label>
+        <label class="setting-item">
+          <input type="checkbox" id="motion-toggle">
+          <span>Reduced motion (less animations)</span>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <label>Reading Level:</label>
+        <select id="reading-level" style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc;">
+          <option value="simple">Simple (short sentences)</option>
+          <option value="standard" selected>Standard</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <label>Backend URL:</label>
+        <input type="text" id="backend-url" value="http://localhost:3000" style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box;">
+      </div>
+
+      <button id="save-settings" class="primary-btn" style="width: 100%;">💾 Save Settings</button>
+
+      <div class="settings-group" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 12px;">
+        <p style="font-size: 12px; color: #666;">
+          <strong>Privacy:</strong> We only send the URL and a short text snippet to our backend. 
+          We never send full HTML, passwords, or form data. Your browsing history stays private.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
