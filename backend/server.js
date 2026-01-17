@@ -297,11 +297,16 @@ async function analyzeThreat(url, pageTitle, snippet) {
   const threatCount = countMatches(snippet, THREAT_KEYWORDS);
   const allText = `${pageTitle} ${snippet}`.toLowerCase();
 
-  // Check for account suspension/verification scams
-  if (checkKeywords(allText, ['account suspended', 'account has been suspended', 'temporarily suspended', 'verify your account', 'verify your identity'])) {
-    score += 40;
+  console.log(`[Analyze] Text analysis for ${domain}:`);
+  console.log(`  - Urgency: ${urgencyCount}, Phishing: ${phishingCount}, Banking: ${bankingCount}, Threats: ${threatCount}`);
+  console.log(`  - Current score: ${score}`);
+
+  // Check for account suspension/verification scams - STRONGEST INDICATOR
+  if (allText.includes('account suspended') || allText.includes('temporarily suspended') || allText.includes('verify your account') || allText.includes('verify your identity')) {
+    score = Math.max(score, 75);
     reasons.push('Account suspension/verification scam detected');
     tags.push('ACCOUNT_SUSPENSION_SCAM');
+    console.log(`  - ✓ Account suspension scam detected`);
   }
 
   // Multiple credential requests (major red flag)
@@ -309,6 +314,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     score += 35;
     reasons.push(`Requests multiple sensitive credentials (${bankingCount} fields detected)`);
     tags.push('MULTIPLE_CREDENTIALS');
+    console.log(`  - ✓ Multiple credentials requested (${bankingCount})`);
   }
 
   // Urgency + Threats combination
@@ -316,6 +322,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     score += 25;
     reasons.push(`High-pressure tactics: ${urgencyCount} urgency signals + ${threatCount} threat keywords`);
     tags.push('URGENCY_THREATS');
+    console.log(`  - ✓ Urgency + Threats detected`);
   }
 
   // Phishing keywords present
@@ -323,6 +330,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
     score += 20;
     reasons.push(`Multiple phishing red flags detected (${phishingCount} indicators)`);
     tags.push('PHISHING_KEYWORDS');
+    console.log(`  - ✓ Phishing keywords (${phishingCount})`);
   }
 
   // Time pressure indicators
@@ -330,13 +338,15 @@ async function analyzeThreat(url, pageTitle, snippet) {
     score += 15;
     reasons.push('Creates artificial time pressure');
     tags.push('TIME_PRESSURE');
+    console.log(`  - ✓ Time pressure detected`);
   }
 
-  // 9. Generic phishing patterns (legacy)
-  if (phishingCount >= 2 && score < 50) {
+  // Urgency alone
+  if (urgencyCount >= 3 && score < 60) {
     score += 20;
-    reasons.push('Multiple phishing red flags (confirm, verify, unusual activity)');
-    tags.push('PHISHING_KEYWORDS');
+    reasons.push(`Strong urgency language detected (${urgencyCount} keywords)`);
+    tags.push('EXCESSIVE_URGENCY');
+    console.log(`  - ✓ Excessive urgency detected`);
   }
 
   // Final verdict
@@ -369,12 +379,21 @@ app.post('/analyze', async (req, res) => {
 
   try {
     const result = await analyzeThreat(url, pageTitle, snippet);
+    console.log(`[Analyze] Result for ${url}: ${result.verdict} (score: ${result.score})`);
+    console.log(`[Analyze] Reasons:`, result.reasons);
     setCache(cacheKey, result);
     res.json(result);
   } catch (err) {
     console.error('[Analyze] Error:', err.message);
     res.status(500).json({ error: 'Analysis failed', message: err.message });
   }
+});
+
+// Cache clear endpoint (for testing)
+app.post('/clear-cache', (req, res) => {
+  cache.clear();
+  console.log('[Cache] Cleared');
+  res.json({ message: 'Cache cleared' });
 });
 
 app.post('/explain', async (req, res) => {

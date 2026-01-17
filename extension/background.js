@@ -28,7 +28,10 @@ async function analyzeUrl(url, pageTitle, snippet) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    const response = await fetch(`${settings.backendBaseUrl}/analyze`, {
+    // Add cache-busting parameter for fresh analysis
+    const analysisUrl = `${settings.backendBaseUrl}/analyze?t=${Date.now()}`;
+    
+    const response = await fetch(analysisUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url, pageTitle, snippet }),
@@ -40,6 +43,7 @@ async function analyzeUrl(url, pageTitle, snippet) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
+    console.log('[BG] Analysis result:', data);
     return data;
   } catch (err) {
     console.error('[BG] Analyze error:', err);
