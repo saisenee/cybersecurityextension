@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon - Verify Your Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Amazon Ember', Arial, sans-serif;
+            background: #f3f3f3;
+        }
+        .test-warning {
+            background: #ff0000;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 10000;
+        }
+        .header {
+            background: #131921;
+            padding: 10px 20px;
+            color: white;
+            margin-top: 40px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+        }
+        .warning-box {
+            background: #fff5cc;
+            border: 1px solid #f0c36d;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .warning-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        h1 {
+            color: #c45500;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #565959;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .urgency {
+            background: #d32f2f;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #a6a6a6;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #e77600;
+            box-shadow: 0 0 3px 2px rgba(228, 121, 17, 0.5);
+        }
+        .btn-verify {
+            width: 100%;
+            padding: 12px;
+            background: #f0c14b;
+            border: 1px solid #a88734;
+            border-radius: 3px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-verify:hover {
+            background: #e0b03d;
+        }
+        .info-text {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .suspicious-indicators {
+            background: #f8f8f8;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-warning">
+        ⚠️ TEST PHISHING PAGE - FOR SECURITY TESTING ONLY ⚠️
+    </div>
+
+    <div class="header">
+        <div class="logo">amazon</div>
+    </div>
+
+    <div class="container">
+        <div class="warning-box">
+            <div class="warning-icon">⚠️</div>
+            <h1>Your Account Has Been Suspended</h1>
+            <p class="subtitle">Unusual activity detected - Immediate verification required</p>
+        </div>
+
+        <div class="urgency">
+            URGENT: Verify within 24 hours or your account will be permanently closed
+        </div>
+
+        <p style="margin-bottom: 20px; font-size: 14px; color: #333;">
+            We detected unusual payment activity on your account. To protect your security, 
+            we've temporarily suspended your account. Please verify your information immediately.
+        </p>
+
+        <form onsubmit="return false;">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" placeholder="Enter your password" required>
+            </div>
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" placeholder="Full name as it appears on your account" required>
+            </div>
+
+            <div class="form-group">
+                <label>Credit Card Number</label>
+                <input type="text" placeholder="Update payment method to restore access" required>
+            </div>
+
+            <div class="form-group">
+                <label>Card CVV</label>
+                <input type="text" placeholder="3-digit security code" maxlength="3" required>
+            </div>
+
+            <button type="submit" class="btn-verify" onclick="alert('TEST PHISHING PAGE\n\nYour extension should detect this as DANGEROUS!\n\nRed flags:\n- Urgent account suspension claim\n- Requests password AND credit card\n- Suspicious domain\n- Threatening language')">
+                Verify My Account Now
+            </button>
+        </form>
+
+        <div class="suspicious-indicators">
+            <strong>🔍 Phishing Indicators (for testing):</strong>
+            <ul style="margin-top: 8px; margin-left: 20px;">
+                <li>Urgent/threatening language ("suspended", "24 hours")</li>
+                <li>Requests both password AND payment info</li>
+                <li>Unusual activity claim without specifics</li>
+                <li>Generic greeting (no personalization)</li>
+                <li>Look-alike domain (check URL bar)</li>
+            </ul>
+        </div>
+
+        <div class="info-text">
+            <strong>Note:</strong> This is a TEST phishing page created for security extension testing. 
+            Real Amazon will NEVER ask for your password and payment information on the same page, 
+            and will never threaten account closure with urgent timelines.
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong style="color: red;">TEST PHISHING PAGE - FOR SECURITY TESTING PURPOSES ONLY</strong>
+    </div>
+</body>
+</html>

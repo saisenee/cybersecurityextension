@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login - TD Bank Online Banking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0e6c3d 0%, #005a2f 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .test-banner {
+            background: #ff0000;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 10000;
+        }
+        .header {
+            background: white;
+            padding: 15px 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 40px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0e6c3d;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .login-box {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+        .urgent-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        .urgent-notice strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #d32f2f;
+        }
+        h1 {
+            color: #0e6c3d;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #0e6c3d;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: #0e6c3d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-login:hover {
+            background: #005a2f;
+        }
+        .security-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #d32f2f;
+            font-size: 13px;
+            color: #333;
+        }
+        .footer {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .timer {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .suspicious-url {
+            display: none;
+            background: #f44336;
+            color: white;
+            padding: 5px;
+            font-size: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        ⚠️ TEST PHISHING PAGE - FOR SECURITY TESTING ONLY - NOT A REAL BANK ⚠️
+    </div>
+    
+    <div class="suspicious-url">secure-td-bank-verify-account-now.com/login?verify=urgent</div>
+    
+    <div class="header">
+        <div class="logo">TD</div>
+    </div>
+
+    <div class="container">
+        <div class="login-box">
+            <div class="urgent-notice">
+                <strong>⚠️ URGENT ACTION REQUIRED</strong>
+                Your account has been temporarily suspended due to suspicious activity. 
+                Please verify your identity immediately to restore access within 24 hours or your account will be permanently locked.
+            </div>
+
+            <h1>Verify Your Account Now</h1>
+            <p class="subtitle">Final notice - Verify now to prevent permanent account closure</p>
+
+            <div class="timer" id="countdown">Time remaining: 23:47:33</div>
+
+            <form id="loginForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="username">Username or Access Card Number *</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+
+                <div class="form-group">
+                    <label for="securityCode">Security Code (from card) *</label>
+                    <input type="text" id="securityCode" name="securityCode" required placeholder="3-digit code">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number for Verification *</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="(555) 555-5555">
+                </div>
+
+                <button type="submit" class="btn-login" onclick="alert('This is a TEST phishing page. Your extension should have detected this as dangerous!')">
+                    Verify Account Immediately
+                </button>
+            </form>
+
+            <div class="security-notice">
+                <strong>🔒 Security Notice:</strong> 
+                This verification must be completed within 24 hours. Failure to verify will result in permanent account suspension and you will need to visit a branch in person with two forms of ID to unlock your account.
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2026 TD Bank. All rights reserved. | Privacy | Terms of Use | Security
+        <br><br>
+        <strong style="color: red;">THIS IS A TEST PHISHING PAGE FOR SECURITY EXTENSION TESTING</strong>
+    </div>
+
+    <script>
+        // Countdown timer to create urgency (common phishing tactic)
+        let seconds = 85653;
+        setInterval(() => {
+            seconds--;
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            document.getElementById('countdown').textContent = 
+                `Time remaining: ${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }, 1000);
+
+        // Prevent actual form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('🛡️ TEST PHISHING PAGE\n\nThis is a demonstration phishing page.\nYour security extension should detect:\n- Urgency keywords\n- Fake banking domain\n- Request for sensitive information\n- Suspicious verification request');
+        });
+    </script>
+</body>
+</html>
