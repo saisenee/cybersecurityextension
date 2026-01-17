@@ -20,6 +20,11 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Allow Chrome/Edge extension origins
+    if (origin && (origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://'))) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.some(allowed => origin.startsWith(allowed.trim()) || allowed.trim() === '*')) {
       callback(null, true);
     } else {
