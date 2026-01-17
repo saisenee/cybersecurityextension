@@ -199,53 +199,58 @@ async function blockUrl(tabId, url, analysisResult) {
 // Message handling
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
-    const tabId = sender.tab?.id;
-    
-    if (msg.type === 'ANALYZE_URL') {
-      console.log(`[BG] Analyzing URL: ${msg.url}`);
-      const result = await analyzeUrl(msg.url, msg.pageTitle, msg.snippet);
+    try {
+      const tabId = sender.tab?.id;
       
-      if (tabId) {
-        tabCache.set(tabId, result);
+      if (msg.type === 'ANALYZE_URL') {
+        console.log(`[BG] Analyzing URL: ${msg.url}`);
+        const result = await analyzeUrl(msg.url, msg.pageTitle, msg.snippet);
         
-        // Check focus mode
-        if (settings.focusModeEnabled && (result.verdict === 'SUSPICIOUS' || result.verdict === 'DANGEROUS')) {
-          recordRiskEvent(tabId);
+        if (tabId) {
+          tabCache.set(tabId, result);
+          
+          // Check focus mode
+          if (settings.focusModeEnabled && (result.verdict === 'SUSPICIOUS' || result.verdict === 'DANGEROUS')) {
+            recordRiskEvent(tabId);
+          }
         }
+        
+        sendResponse(result);
       }
       
-      sendResponse(result);
-    }
-    
-    if (msg.type === 'GET_TAB_STATUS') {
-      const cached = tabCache.get(tabId);
-      sendResponse(cached || { verdict: 'SAFE', score: 0, reasons: [], tags: [], actions: [] });
-    }
-    
-    if (msg.type === 'GET_EXPLANATION') {
-      const explain = await getExplanation(msg.url, msg.verdict, msg.tags, msg.reasons);
-      sendResponse(explain);
-    }
-    
-    if (msg.type === 'GET_CARDS') {
-      const cards = await getCards(msg.verdict, msg.tags, msg.reasons);
-      sendResponse(cards);
-    }
-    
-    if (msg.type === 'DEEP_CHECK') {
-      const check = await deepCheck(msg.url);
-      sendResponse(check);
-    }
-    
-    if (msg.type === 'RISK_EVENT') {
-      recordRiskEvent(tabId);
-      sendResponse({ ok: true });
-    }
-    
-    if (msg.type === 'ALLOW_ONCE') {
-      // Tab wants to proceed to dangerous site
-      console.log(`[BG] Allowing once: ${msg.url} for tab ${msg.tabId}`);
-      sendResponse({ ok: true });
+      if (msg.type === 'GET_TAB_STATUS') {
+        const cached = tabCache.get(tabId);
+        sendResponse(cached || { verdict: 'SAFE', score: 0, reasons: [], tags: [], actions: [] });
+      }
+      
+      if (msg.type === 'GET_EXPLANATION') {
+        const explain = await getExplanation(msg.url, msg.verdict, msg.tags, msg.reasons);
+        sendResponse(explain);
+      }
+      
+      if (msg.type === 'GET_CARDS') {
+        const cards = await getCards(msg.verdict, msg.tags, msg.reasons);
+        sendResponse(cards);
+      }
+      
+      if (msg.type === 'DEEP_CHECK') {
+        const check = await deepCheck(msg.url);
+        sendResponse(check);
+      }
+      
+      if (msg.type === 'RISK_EVENT') {
+        recordRiskEvent(tabId);
+        sendResponse({ ok: true });
+      }
+      
+      if (msg.type === 'ALLOW_ONCE') {
+        // Tab wants to proceed to dangerous site
+        console.log(`[BG] Allowing once: ${msg.url} for tab ${msg.tabId}`);
+        sendResponse({ ok: true });
+      }
+    } catch (err) {
+      console.error('[BG] Message handler error:', err);
+      sendResponse({ error: err.message });
     }
   })();
   
