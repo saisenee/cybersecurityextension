@@ -265,17 +265,6 @@ document.getElementById('save-settings').addEventListener('click', async () => {
   alert('✅ Settings saved!');
 });
 
-  await chrome.storage.local.set({
-    widgetEnabled,
-    focusModeEnabled,
-    reducedMotion,
-    readingLevel,
-    backendBaseUrl
-  });
-
-  alert('Settings saved!');
-});
-
 // Load settings on init
 async function loadSettings() {
   const stored = await chrome.storage.local.get([

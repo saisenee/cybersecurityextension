@@ -24,15 +24,26 @@ async function initSettings() {
 // Analyze URL
 async function analyzeUrl(url, pageTitle, snippet) {
   try {
+    // Add timeout to fetch to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${settings.backendBaseUrl}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, pageTitle, snippet })
+      body: JSON.stringify({ url, pageTitle, snippet }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
     const data = await response.json();
     return data;
   } catch (err) {
     console.error('[BG] Analyze error:', err);
+    // Return safe default instead of throwing
     return { verdict: 'SAFE', score: 0, reasons: [], tags: [], actions: [] };
   }
 }
