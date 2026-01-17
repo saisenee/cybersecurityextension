@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SafeBrowse Aid</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>SafeBrowse Aid</h1>
+        <p class="sub">Protects from risky sites and downloads.</p>
+      </header>
+
+      <section class="card">
+        <div class="row">
+          <label class="switch">
+            <input type="checkbox" id="enabledToggle" />
+            <span class="slider"></span>
+          </label>
+          <div>
+            <div class="label">Protection</div>
+            <div id="statusText" class="muted">Checking…</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="stats">
+          <div><strong>Local</strong><div id="localCount">0</div></div>
+          <div><strong>Remote</strong><div id="remoteCount">0</div></div>
+          <div><strong>Updated</strong><div id="updatedAt">—</div></div>
+        </div>
+        <button id="forceUpdate" class="btn">Update Blocklist</button>
+      </section>
+
+      <section class="card">
+        <h2>Recent Activity</h2>
+        <ul id="incidentList" class="list"></ul>
+        <button id="clearIncidents" class="btn">Clear</button>
+      </section>
+
+      <section class="card">
+        <h2>Learn</h2>
+        <ul>
+          <li><a href="https://staysafeonline.org/" target="_blank" rel="noopener">Stay Safe Online</a></li>
+          <li><a href="https://www.consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams" target="_blank" rel="noopener">Recognize phishing</a></li>
+        </ul>
+      </section>
+
+      <footer>
+        <button id="openOptions" class="link">Options</button>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

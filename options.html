@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SafeBrowse Aid – Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>SafeBrowse Aid – Options</h1>
+
+      <section class="card">
+        <h2>Whitelist (allow)</h2>
+        <div class="row">
+          <input id="whitelistInput" placeholder="example.com" />
+          <button id="addWhitelist" class="btn">Add</button>
+        </div>
+        <ul id="whitelist"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Custom Blocklist</h2>
+        <div class="row">
+          <input id="blocklistInput" placeholder="bad-domain.xyz" />
+          <button id="addBlocklist" class="btn danger">Add</button>
+        </div>
+        <ul id="blocklist"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Maintenance</h2>
+        <button id="updateNow" class="btn">Update remote blocklist now</button>
+        <div id="updateStatus" class="muted"></div>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

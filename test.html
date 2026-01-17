@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SafeBrowse Aid Test Page</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width: 700px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #0b3d5c; }
+    .test-box { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .test-link { display: inline-block; font-size: 20px; padding: 12px 20px; background: #ff5252; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+    .test-link:hover { background: #d32f2f; }
+    .safe-link { background: #4caf50; }
+    .safe-link:hover { background: #388e3c; }
+    .instructions { background: #fff9c4; padding: 15px; border-radius: 6px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ SafeBrowse Aid - Test Page</h1>
+  
+  <div class="instructions">
+    <strong>Instructions:</strong> Click the red test links below. If the extension is working, you'll see a warning overlay appear BEFORE the browser tries to navigate. If nothing happens, the extension may not be active.
+  </div>
+
+  <div class="test-box">
+    <h2>Test 1: Local Blocklist</h2>
+    <p>This link is in your local blocklist (malicious.example):</p>
+    <a href="data:text/html,<h1>You proceeded anyway!</h1><p>This would have been a risky page.</p>" class="test-link">🚨 Click to Test #1</a>
+    <p style="font-size: 12px; color: #666; margin-top: 8px;">The overlay should appear when you click. Try "Go Back" first!</p>
+  </div>
+
+  <div class="test-box">
+    <h2>Test 2: Another Blocked Domain</h2>
+    <p>This link is also blocked (phishing.test):</p>
+    <a href="data:text/html,<h1>Phishing attempt blocked!</h1>" class="test-link">🚨 Click to Test #2</a>
+  </div>
+
+  <div class="test-box">
+    <h2>Test 3: Custom Blocked Domain</h2>
+    <p>This link is blocked too (bad-domain.xyz):</p>
+    <a href="data:text/html,<h1>Malware blocked!</h1>" class="test-link">🚨 Click to Test #3</a>
+  </div>
+
+  <div class="test-box">
+    <h2>Control Test: Safe Link</h2>
+    <p>This is a normal safe link (should work normally):</p>
+    <a href="https://www.google.com" class="safe-link" target="_blank">✅ Safe Link to Google</a>
+  </div>
+
+  <div class="instructions">
+    <strong>What to expect:</strong>
+    <ul>
+      <li>❌ Red test links: Warning overlay should appear with "Go Back" and "Proceed Anyway" buttons</li>
+      <li>✅ Green safe link: Opens normally without any warning</li>
+      <li>🔴 Extension icon: Should show a red "!" badge after clicking a blocked link</li>
+      <li>📋 Recent Activity: Open the extension popup to see logged incidents</li>
+    </ul>
+  </div>
+</body>
+</html>

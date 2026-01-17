@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "SafeBrowse Aid",
+  "description": "Detects risky sites/links/downloads, blocks them, and suggests safer alternatives with an accessible UI.",
+  "version": "0.1.0",
+  "permissions": ["storage", "scripting", "downloads", "activeTab", "alarms"],
+  "host_permissions": ["<all_urls>", "https://urlhaus.abuse.ch/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SafeBrowse Aid"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
