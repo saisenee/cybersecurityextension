@@ -51,6 +51,9 @@ async function analyzeUrl(url, pageTitle, snippet) {
 // Get explanation
 async function getExplanation(url, verdict, tags, reasons) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${settings.backendBaseUrl}/explain`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,8 +63,14 @@ async function getExplanation(url, verdict, tags, reasons) {
         tags,
         reasons,
         reading_level: settings.readingLevel
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
     return await response.json();
   } catch (err) {
     console.error('[BG] Explain error:', err);
@@ -72,6 +81,9 @@ async function getExplanation(url, verdict, tags, reasons) {
 // Get learning cards
 async function getCards(verdict, tags, reasons) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${settings.backendBaseUrl}/cards`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,8 +93,14 @@ async function getCards(verdict, tags, reasons) {
         reasons,
         reading_level: settings.readingLevel,
         max_cards: 3
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
     return await response.json();
   } catch (err) {
     console.error('[BG] Cards error:', err);
@@ -93,11 +111,20 @@ async function getCards(verdict, tags, reasons) {
 // Deep check (optional)
 async function deepCheck(url) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     const response = await fetch(`${settings.backendBaseUrl}/deepcheck`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
     return await response.json();
   } catch (err) {
     console.error('[BG] Deep check error:', err);
