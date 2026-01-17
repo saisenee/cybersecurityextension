@@ -45,14 +45,14 @@
         background: #4CAF50;
         border-radius: 50%;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        cursor: move;
+        cursor: pointer;
         z-index: 999999;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 28px;
         user-select: none;
-        transition: transform 0.2s;
+        transition: transform 0.2s, background 0.3s;
       ">
         🛡️
       </div>
@@ -62,7 +62,9 @@
 
     const widgetEl = document.getElementById('neurosafe-widget');
     let isDragging = false;
+    let hasMoved = false;
     let startX, startY, offsetX = 0, offsetY = 0;
+    let mouseDownTime = 0;
 
     // Load saved position
     chrome.storage.local.get(['widgetPos'], (data) => {
@@ -74,8 +76,50 @@
       }
     });
 
+    // Update widget appearance based on analysis
+    function updateWidgetStatus(verdict) {
+      const colors = {
+        SAFE: '#4CAF50',
+        SUSPICIOUS: '#FF9800',
+        DANGEROUS: '#F44336'
+      };
+      const icons = {
+        SAFE: '✓',
+        SUSPICIOUS: '⚠',
+        DANGEROUS: '⛔'
+      };
+      
+      widgetEl.style.background = colors[verdict] || '#4CAF50';
+      widgetEl.textContent = icons[verdict] || '🛡️';
+      
+      // Add pulse animation
+      widgetEl.style.animation = 'none';
+      setTimeout(() => {
+        widgetEl.style.animation = 'pulse 0.5s ease-in-out';
+      }, 10);
+    }
+
+    // Add CSS animation
+    if (!document.getElementById('neurosafe-styles')) {
+      const style = document.createElement('style');
+      style.id = 'neurosafe-styles';
+      style.textContent = `
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        @keyframes analyzing {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     widgetEl.addEventListener('mousedown', (e) => {
+      mouseDownTime = Date.now();
       isDragging = true;
+      hasMoved = false;
       startX = e.clientX;
       startY = e.clientY;
       offsetX = widgetEl.offsetLeft;
@@ -88,66 +132,136 @@
       if (!isDragging) return;
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
-      const newX = offsetX + deltaX;
-      const newY = offsetY + deltaY;
-      widgetEl.style.left = newX + 'px';
-      widgetEl.style.top = newY + 'px';
-      widgetEl.style.right = 'auto';
-      widgetEl.style.bottom = 'auto';
+      
+      // Only start dragging if moved more than 5 pixels
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        hasMoved = true;
+        const newX = offsetX + deltaX;
+        const newY = offsetY + deltaY;
+        widgetEl.style.left = newX + 'px';
+        widgetEl.style.top = newY + 'px';
+        widgetEl.style.right = 'auto';
+        widgetEl.style.bottom = 'auto';
+      }
     });
 
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', async (e) => {
       if (!isDragging) return;
+      
+      const clickDuration = Date.now() - mouseDownTime;
+      const wasQuickClick = clickDuration < 200 && !hasMoved;
+      
       isDragging = false;
-      widgetEl.style.cursor = 'move';
+      widgetEl.style.cursor = 'pointer';
 
-      // Snap to corner
-      const rect = widgetEl.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+      if (hasMoved) {
+        // Snap to corner
+        const rect = widgetEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
 
-      let pos = { left: 'auto', right: 'auto', top: 'auto', bottom: 'auto' };
-      if (cx < vw / 2 && cy < vh / 2) {
-        pos = { left: '20px', right: 'auto', top: '20px', bottom: 'auto' };
-      } else if (cx >= vw / 2 && cy < vh / 2) {
-        pos = { left: 'auto', right: '20px', top: '20px', bottom: 'auto' };
-      } else if (cx < vw / 2 && cy >= vh / 2) {
-        pos = { left: '20px', right: 'auto', top: 'auto', bottom: '20px' };
-      } else {
-        pos = { left: 'auto', right: '20px', top: 'auto', bottom: '20px' };
+        let pos = { left: 'auto', right: 'auto', top: 'auto', bottom: 'auto' };
+        if (cx < vw / 2 && cy < vh / 2) {
+          pos = { left: '20px', right: 'auto', top: '20px', bottom: 'auto' };
+        } else if (cx >= vw / 2 && cy < vh / 2) {
+          pos = { left: 'auto', right: '20px', top: '20px', bottom: 'auto' };
+        } else if (cx < vw / 2 && cy >= vh / 2) {
+          pos = { left: '20px', right: 'auto', top: 'auto', bottom: '20px' };
+        } else {
+          pos = { left: 'auto', right: '20px', top: 'auto', bottom: '20px' };
+        }
+
+        widgetEl.style.left = pos.left;
+        widgetEl.style.right = pos.right;
+        widgetEl.style.top = pos.top;
+        widgetEl.style.bottom = pos.bottom;
+
+        chrome.storage.local.set({ widgetPos: pos });
+      } else if (wasQuickClick) {
+        // Handle click - analyze the page
+        e.stopPropagation();
+        
+        // Show analyzing state
+        widgetEl.textContent = '⏳';
+        widgetEl.style.animation = 'analyzing 1s linear infinite';
+        
+        const currentUrl = window.location.href;
+        const pageTitle = document.title;
+        const snippet = document.body.innerText.slice(0, 2000);
+
+        try {
+          const result = await chrome.runtime.sendMessage({
+            type: 'ANALYZE_URL',
+            url: currentUrl,
+            pageTitle,
+            snippet
+          });
+
+          lastAnalysis = result;
+          
+          // Update widget with result
+          updateWidgetStatus(result.verdict);
+          
+          // Show tooltip with result
+          showResultTooltip(widgetEl, result);
+          
+          if (result.verdict !== 'SAFE') {
+            showInterstitial(result);
+          }
+        } catch (err) {
+          console.error('[Content] Analysis error:', err);
+          widgetEl.textContent = '🛡️';
+          widgetEl.style.animation = 'none';
+        }
       }
-
-      widgetEl.style.left = pos.left;
-      widgetEl.style.right = pos.right;
-      widgetEl.style.top = pos.top;
-      widgetEl.style.bottom = pos.bottom;
-
-      chrome.storage.local.set({ widgetPos: pos });
     });
 
-    widgetEl.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const currentUrl = window.location.href;
-      const pageTitle = document.title;
-      const snippet = document.body.innerText.slice(0, 2000);
-
-      const result = await chrome.runtime.sendMessage({
-        type: 'ANALYZE_URL',
-        url: currentUrl,
-        pageTitle,
-        snippet
-      });
-
-      lastAnalysis = result;
-      if (result.verdict !== 'SAFE') {
-        showInterstitial(result);
-      }
-
-      // Open side panel
-      chrome.runtime.sendMessage({ type: 'OPEN_SIDEPANEL' }).catch(() => {});
-    });
+    // Show result tooltip
+    function showResultTooltip(element, result) {
+      // Remove existing tooltip
+      const existingTooltip = document.getElementById('neurosafe-tooltip');
+      if (existingTooltip) existingTooltip.remove();
+      
+      const tooltip = document.createElement('div');
+      tooltip.id = 'neurosafe-tooltip';
+      tooltip.style.cssText = `
+        position: fixed;
+        background: rgba(0,0,0,0.9);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        z-index: 999998;
+        max-width: 250px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        pointer-events: none;
+      `;
+      
+      const verdictText = {
+        SAFE: '✓ Safe',
+        SUSPICIOUS: '⚠ Suspicious',
+        DANGEROUS: '⛔ Dangerous'
+      };
+      
+      tooltip.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">${verdictText[result.verdict]}</div>
+        <div style="font-size: 11px; opacity: 0.8;">Score: ${result.score}/100</div>
+        ${result.reasons.length > 0 ? `<div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">${result.reasons[0]}</div>` : ''}
+      `;
+      
+      document.body.appendChild(tooltip);
+      
+      // Position tooltip near widget
+      const rect = element.getBoundingClientRect();
+      tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+      tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => tooltip.remove(), 3000);
+    }
   }
 
   // Show interstitial
