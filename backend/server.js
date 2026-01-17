@@ -64,10 +64,12 @@ const OFFICIAL_DOMAINS = (process.env.OFFICIAL_DOMAIN_ALLOWLIST ||
 ).split(',').map(d => d.trim());
 
 // Heuristic keywords
-const URGENCY_KEYWORDS = ['urgent', 'immediately', 'expires', 'final notice', 'act now', 'verify now', 'suspended', 'limited time', '24 hours', 'now', 'asap'];
+const URGENCY_KEYWORDS = ['urgent', 'immediately', 'expires', 'final notice', 'act now', 'verify now', 'suspended', 'limited time', '24 hours', 'now', 'asap', 'action required', 'within 24', 'permanent', 'locked', 'restore access'];
 const CRA_KEYWORDS = ['cra', 'canada revenue agency', 'gst', 'hst', 'refund', 'benefit', 'carbon rebate', 'my account', 'gckey', 'efile', 'tax return'];
 const INTERAC_KEYWORDS = ['interac', 'e-transfer', 'etransfer', 'escrow', 'processing fee', 'deposit pending', 'unlock transfer', 'pending funds'];
-const PHISHING_KEYWORDS = ['confirm', 'verify', 'urgent action', 'click here', 'update payment', 'unusual activity', 'suspended account'];
+const PHISHING_KEYWORDS = ['confirm', 'verify', 'urgent action', 'click here', 'update payment', 'unusual activity', 'suspended account', 'verify your account', 'verify your identity', 'security code', 'account suspended', 'temporarily suspended', 'restore your account'];
+const BANKING_KEYWORDS = ['username', 'password', 'account number', 'card number', 'cvv', 'security code', 'access card', 'phone number for verification', 'credit card', 'debit card', 'pin code'];
+const THREAT_KEYWORDS = ['permanent', 'permanently', 'locked', 'closure', 'closed', 'disabled', 'terminated', 'blocked', 'restricted'];
 
 function extractDomain(url) {
   try {
@@ -288,9 +290,50 @@ async function analyzeThreat(url, pageTitle, snippet) {
     }
   }
 
-  // 8. Generic phishing patterns
+  // 8. Account verification / Banking phishing detection
+  const urgencyCount = countMatches(snippet, URGENCY_KEYWORDS);
   const phishingCount = countMatches(snippet, PHISHING_KEYWORDS);
+  const bankingCount = countMatches(snippet, BANKING_KEYWORDS);
+  const threatCount = countMatches(snippet, THREAT_KEYWORDS);
+  const allText = `${pageTitle} ${snippet}`.toLowerCase();
+
+  // Check for account suspension/verification scams
+  if (checkKeywords(allText, ['account suspended', 'account has been suspended', 'temporarily suspended', 'verify your account', 'verify your identity'])) {
+    score += 40;
+    reasons.push('Account suspension/verification scam detected');
+    tags.push('ACCOUNT_SUSPENSION_SCAM');
+  }
+
+  // Multiple credential requests (major red flag)
+  if (bankingCount >= 3) {
+    score += 35;
+    reasons.push(`Requests multiple sensitive credentials (${bankingCount} fields detected)`);
+    tags.push('MULTIPLE_CREDENTIALS');
+  }
+
+  // Urgency + Threats combination
+  if (urgencyCount >= 2 && threatCount >= 1) {
+    score += 25;
+    reasons.push(`High-pressure tactics: ${urgencyCount} urgency signals + ${threatCount} threat keywords`);
+    tags.push('URGENCY_THREATS');
+  }
+
+  // Phishing keywords present
   if (phishingCount >= 2) {
+    score += 20;
+    reasons.push(`Multiple phishing red flags detected (${phishingCount} indicators)`);
+    tags.push('PHISHING_KEYWORDS');
+  }
+
+  // Time pressure indicators
+  if (checkKeywords(allText, ['24 hours', 'within 24', 'expires', 'final notice', 'immediately'])) {
+    score += 15;
+    reasons.push('Creates artificial time pressure');
+    tags.push('TIME_PRESSURE');
+  }
+
+  // 9. Generic phishing patterns (legacy)
+  if (phishingCount >= 2 && score < 50) {
     score += 20;
     reasons.push('Multiple phishing red flags (confirm, verify, unusual activity)');
     tags.push('PHISHING_KEYWORDS');
