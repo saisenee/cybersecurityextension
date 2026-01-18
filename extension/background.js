@@ -1,25 +1,37 @@
 // NeuroSafe Copilot - Background Service Worker
 
 // Use production URL or fallback to localhost for development
-const BACKEND_URL = 'https://cybersecurityextension.vercel.app'; // Production Vercel URL
-// const BACKEND_URL = 'http://localhost:3000'; // Development: Uncomment for local testing
+const BACKEND_URL = 'http://localhost:3000'; // Development: local backend
+// const BACKEND_URL = 'https://cybersecurityextension.vercel.app'; // Production: Uncomment for deployed backend
 const FOCUS_MODE_THRESHOLD = 2; // risky events in 60s
 const FOCUS_MODE_WINDOW = 60000; // ms
 
 // In-memory tracking
 const tabCache = new Map(); // tabId -> { verdict, score, timestamp }
 const riskEvents = new Map(); // tabId -> [timestamps]
-const settings = {};
+const settings = {
+  widgetEnabled: true,
+  focusModeEnabled: true,
+  reducedMotion: false,
+  readingLevel: 'standard',
+  backendBaseUrl: BACKEND_URL,
+  autoBlockEnabled: true
+};
 
 // Initialize default settings
 async function initSettings() {
-  const stored = await chrome.storage.local.get(['widgetEnabled', 'focusModeEnabled', 'reducedMotion', 'readingLevel', 'backendBaseUrl', 'autoBlockEnabled']);
-  settings.widgetEnabled = stored.widgetEnabled !== false;
-  settings.focusModeEnabled = stored.focusModeEnabled !== false;
-  settings.reducedMotion = stored.reducedMotion === true;
-  settings.readingLevel = stored.readingLevel || 'standard';
-  settings.backendBaseUrl = stored.backendBaseUrl || BACKEND_URL;
-  settings.autoBlockEnabled = stored.autoBlockEnabled !== false; // Default: enabled
+  try {
+    const stored = await chrome.storage.local.get(['widgetEnabled', 'focusModeEnabled', 'reducedMotion', 'readingLevel', 'backendBaseUrl', 'autoBlockEnabled']);
+    settings.widgetEnabled = stored.widgetEnabled !== false;
+    settings.focusModeEnabled = stored.focusModeEnabled !== false;
+    settings.reducedMotion = stored.reducedMotion === true;
+    settings.readingLevel = stored.readingLevel || 'standard';
+    settings.backendBaseUrl = stored.backendBaseUrl || BACKEND_URL;
+    settings.autoBlockEnabled = stored.autoBlockEnabled !== false;
+    console.log('[BG] Settings initialized:', settings);
+  } catch (err) {
+    console.error('[BG] Error initializing settings:', err);
+  }
 }
 
 // Analyze URL
