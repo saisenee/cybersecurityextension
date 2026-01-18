@@ -592,7 +592,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', cacheSize: cache.size });
 });
 
+// API Key Status Endpoint (for debugging)
+app.get('/api-status', (req, res) => {
+  res.json({
+    safe_browsing: !!process.env.SAFE_BROWSING_API_KEY,
+    otx: !!process.env.OTX_API_KEY,
+    virustotal: !!process.env.VIRUSTOTAL_API_KEY,
+    ai_provider: process.env.AI_PROVIDER || 'none',
+    urlhaus: true, // Always available, no key needed
+    cache_size: cache.size,
+    official_domains: OFFICIAL_DOMAINS.length
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`🛡️ NeuroSafe Backend running on http://localhost:${PORT}`);
   console.log(`📊 Cache size: ${cache.size} entries`);
+  console.log(`🔑 API Keys configured:`);
+  console.log(`   - Safe Browsing: ${process.env.SAFE_BROWSING_API_KEY ? '✅' : '❌'}`);
+  console.log(`   - OTX: ${process.env.OTX_API_KEY ? '✅' : '❌'}`);
+  console.log(`   - VirusTotal: ${process.env.VIRUSTOTAL_API_KEY ? '✅' : '❌'}`);
+  console.log(`   - URLhaus: ✅ (no key needed)`);
 });
