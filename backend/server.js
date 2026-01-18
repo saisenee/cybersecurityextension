@@ -217,6 +217,18 @@ async function analyzeThreat(url, pageTitle, snippet) {
   const tags = [];
   let score = 5; // baseline
   const actions = [];
+  
+  // AGGRESSIVE: Check pageTitle first for CRA scam patterns
+  const allText = `${pageTitle} ${snippet}`.toLowerCase();
+  
+  if ((allText.includes('cra') || allText.includes('refund') || allText.includes('tax')) &&
+      (allText.includes('urgent') || allText.includes('24 hours') || allText.includes('expire') || allText.includes('act now'))) {
+    score = 80;
+    reasons.push('CRA refund scam pattern detected (urgent + refund + time pressure)');
+    tags.push('CRA_SCAM_DETECTED');
+    actions.push({ type: 'OPEN_OFFICIAL', label: 'Go to official CRA', url: 'https://www.canada.ca/cra' });
+    return { verdict: 'DANGEROUS', score, reasons, tags, actions, meta: { domain } };
+  }
 
   // 1. Safe Browsing check
   console.log(`[Analyze] Checking Safe Browsing for ${domain}`);
@@ -304,7 +316,7 @@ async function analyzeThreat(url, pageTitle, snippet) {
   const phishingCount = countMatches(snippet, PHISHING_KEYWORDS);
   const bankingCount = countMatches(snippet, BANKING_KEYWORDS);
   const threatCount = countMatches(snippet, THREAT_KEYWORDS);
-  const allText = `${pageTitle} ${snippet}`.toLowerCase();
+  // Note: allText already declared at line 222
 
   console.log(`[Analyze] Text analysis for ${domain}:`);
   console.log(`  - Urgency: ${urgencyCount}, Phishing: ${phishingCount}, Banking: ${bankingCount}, Threats: ${threatCount}`);
