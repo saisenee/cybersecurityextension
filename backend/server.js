@@ -218,12 +218,25 @@ async function analyzeThreat(url, pageTitle, snippet) {
   let score = 5; // baseline
   const actions = [];
   
-  // AGGRESSIVE: Check pageTitle first for CRA scam patterns
-  const allText = `${pageTitle} ${snippet}`.toLowerCase();
+  // ULTRA-AGGRESSIVE: Check pageTitle ONLY for CRA scam patterns
+  const pageTitle_lower = pageTitle.toLowerCase();
+  const snippet_lower = (snippet || '').toLowerCase();
+  const allText = `${pageTitle_lower} ${snippet_lower}`;
   
-  if ((allText.includes('cra') || allText.includes('refund') || allText.includes('tax')) &&
+  // Simple CRA detection: If title has "cra" + "refund" or "claim" = flag it
+  if (pageTitle_lower.includes('cra') && (pageTitle_lower.includes('refund') || pageTitle_lower.includes('claim'))) {
+    score = 85;
+    reasons.push('CRA refund/claim page detected (likely phishing)');
+    tags.push('CRA_REFUND_PAGE');
+    actions.push({ type: 'OPEN_OFFICIAL', label: 'Go to official CRA', url: 'https://www.canada.ca/cra' });
+    return { verdict: 'DANGEROUS', score, reasons, tags, actions, meta: { domain } };
+  }
+  
+  // Also check full text for CRA + urgency combinations
+  if ((allText.includes('cra') || allText.includes('revenue agency')) && 
+      (allText.includes('refund') || allText.includes('claim')) &&
       (allText.includes('urgent') || allText.includes('24 hours') || allText.includes('expire') || allText.includes('act now'))) {
-    score = 80;
+    score = 85;
     reasons.push('CRA refund scam pattern detected (urgent + refund + time pressure)');
     tags.push('CRA_SCAM_DETECTED');
     actions.push({ type: 'OPEN_OFFICIAL', label: 'Go to official CRA', url: 'https://www.canada.ca/cra' });
