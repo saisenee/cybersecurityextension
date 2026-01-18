@@ -64,11 +64,11 @@ const OFFICIAL_DOMAINS = (process.env.OFFICIAL_DOMAIN_ALLOWLIST ||
 ).split(',').map(d => d.trim());
 
 // Heuristic keywords
-const URGENCY_KEYWORDS = ['urgent', 'immediately', 'expires', 'final notice', 'act now', 'verify now', 'suspended', 'limited time', '24 hours', 'now', 'asap', 'action required', 'within 24', 'permanent', 'locked', 'restore access'];
-const CRA_KEYWORDS = ['cra', 'canada revenue agency', 'gst', 'hst', 'refund', 'benefit', 'carbon rebate', 'my account', 'gckey', 'efile', 'tax return'];
+const URGENCY_KEYWORDS = ['urgent', 'immediately', 'expires', 'final notice', 'act now', 'verify now', 'suspended', 'limited time', '24 hours', 'now', 'asap', 'action required', 'within 24', 'permanent', 'locked', 'restore access', '48 hours'];
+const CRA_KEYWORDS = ['cra', 'canada revenue agency', 'gst', 'hst', 'refund', 'benefit', 'carbon rebate', 'my account', 'gckey', 'efile', 'tax return', 'sin', 'social insurance number', 'claim your tax refund', 'tax refund'];
 const INTERAC_KEYWORDS = ['interac', 'e-transfer', 'etransfer', 'escrow', 'processing fee', 'deposit pending', 'unlock transfer', 'pending funds'];
 const PHISHING_KEYWORDS = ['confirm', 'verify', 'urgent action', 'click here', 'update payment', 'unusual activity', 'suspended account', 'verify your account', 'verify your identity', 'security code', 'account suspended', 'temporarily suspended', 'restore your account'];
-const BANKING_KEYWORDS = ['username', 'password', 'account number', 'card number', 'cvv', 'security code', 'access card', 'phone number for verification', 'credit card', 'debit card', 'pin code'];
+const BANKING_KEYWORDS = ['username', 'password', 'account number', 'card number', 'cvv', 'security code', 'access card', 'phone number for verification', 'credit card', 'debit card', 'pin code', 'bank account number', 'date of birth'];
 const THREAT_KEYWORDS = ['permanent', 'permanently', 'locked', 'closure', 'closed', 'disabled', 'terminated', 'blocked', 'restricted'];
 
 function extractDomain(url) {
@@ -276,17 +276,26 @@ async function analyzeThreat(url, pageTitle, snippet) {
     }
   }
 
-  // 7. CRA refund scam heuristics
-  if (checkKeywords(snippet, CRA_KEYWORDS)) {
+  // 7. CRA refund scam heuristics - STRONGEST CRA DETECTION
+  if (checkKeywords(snippet, CRA_KEYWORDS) || checkKeywords(pageTitle, CRA_KEYWORDS)) {
     const urgencyCount = countMatches(snippet, URGENCY_KEYWORDS);
     const craCount = countMatches(snippet, CRA_KEYWORDS);
-    if ((checkKeywords(snippet, ['refund', 'benefit', 'carbon rebate']) || checkKeywords(snippet, ['verify', 'confirm'])) && urgencyCount > 0) {
-      score = 70 + (urgencyCount * 5);
-      reasons.push(`CRA refund/benefit scam pattern (${craCount} CRA keywords, ${urgencyCount} urgency signals)`);
-      tags.push('CRA_REFUND_URGENCY');
+    const bankingCount = countMatches(snippet, BANKING_KEYWORDS);
+    
+    // CRA scam if:
+    // - Has refund/benefit + urgency, OR
+    // - Has verify/confirm + urgency, OR  
+    // - Has SIN request + any urgency
+    if ((checkKeywords(snippet, ['refund', 'benefit', 'carbon rebate']) || 
+         checkKeywords(snippet, ['verify', 'confirm', 'claim']) || 
+         checkKeywords(snippet, ['sin', 'social insurance'])) && 
+        (urgencyCount > 0 || bankingCount > 0)) {
+      score = Math.max(score, 80);
+      reasons.push(`CRA refund/benefit scam pattern (${craCount} CRA keywords, ${urgencyCount} urgency signals, ${bankingCount} credential requests)`);
+      tags.push('CRA_REFUND_SCAM');
       actions.push({ type: 'OPEN_OFFICIAL', label: 'Go to official CRA site', url: 'https://www.canada.ca/cra' });
       actions.push({ type: 'SEARCH_OFFICIAL', label: 'Learn how CRA contacts you', query: 'CRA official communication' });
-      return { verdict: 'SUSPICIOUS', score: Math.min(score, 85), reasons, tags, actions, meta: { domain } };
+      return { verdict: 'DANGEROUS', score: Math.min(score, 95), reasons, tags, actions, meta: { domain } };
     }
   }
 
